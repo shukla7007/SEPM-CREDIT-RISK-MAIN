@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Evaluation Charts</title>
+    <style>
+        .image-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .image-container img {
+            max-width: 30%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        @media (max-width: 768px) {
+            .image-container img {
+                max-width: 45%;
+            }
+        }
+        @media (max-width: 480px) {
+            .image-container img {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Model Evaluation Charts</h1>
+    <div class="image-container">
+        <img src="{{ url_for('static', filename='confusion_matrix_heatmap.png') }}" alt="Confusion Matrix Heatmap">
+        <img src="{{ url_for('static', filename='feature_importance_bar.png') }}" alt="Feature Importance Bar Chart">
+        <img src="{{ url_for('static', filename='roc_curve.png') }}" alt="ROC Curve">
+    </div>
+</body>
+</html>

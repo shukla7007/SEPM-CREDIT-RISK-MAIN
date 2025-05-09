@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tax Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CDN -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style id="theme-style">
+        body {
+            background-color: #141212;
+            background-image: url('/static/tax.png');
+            padding: 20px;
+            color: #fff;
+        }
+        h1 {
+            color: rgb(0, 217, 255);
+        }
+        .content-box {
+            padding: 40px;
+            border: 2px solid #ff0000cc;
+            border-radius: 5px;
+            background-color: #e3d2d2;
+            color: #000;
+        }
+        .btn-theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .modal-content {
+            margin-top: 20%;
+        }
+        .export-buttons {
+            margin-top: 15px;
+            text-align: center;
+        }
+        #tax-chart {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <button class="btn btn-secondary btn-theme-toggle" onclick="toggleTheme()">Toggle Theme</button>
+
+    <div class="container">
+        <div class="row justify-content-center align-items-center" style="min-height: 100vh;">
+            <div class="col-md-6">
+                <div class="content-box">
+                    <h1 class="text-center">Tax Calculator</h1>
+                    <form method="POST">
+                        <div class="form-group">
+                            <label for="income">Gross Annual Income:</label>
+                            <input type="number" name="income" id="income" class="form-control" placeholder="e.g., 600000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="extra_income">Extra Income:</label>
+                            <input type="number" name="extra_income" id="extra_income" class="form-control" placeholder="e.g., 200000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Age Group:</label>
+                            <select name="age" id="age" class="form-control" required>
+                                <option value="<40">&lt; 40</option>
+                                <option value=">=40&<60">&ge; 40 &amp; &lt; 60</option>
+                                <option value=">=60">&ge; 60</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="deductions">Total Deductions:</label>
+                            <input type="number" name="deductions" id="deductions" class="form-control" placeholder="e.g., 150000" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Calculate Tax</button>
+                    </form>
+
+                    <div class="export-buttons">
+                        <a href="/download_tax_csv" class="btn btn-outline-success">Download CSV</a>
+                        <a href="/download_tax_pdf" class="btn btn-outline-danger">Download PDF</a>
+                    </div>
+
+                    {% if result and not result.error %}
+                        <div id="tax-chart" class="text-center">
+                            <img src="{{ url_for('static', filename='tax_plot.png') }}" alt="Tax Chart" class="img-fluid mt-3">
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="resultModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color: #000;">Tax Calculation Result</h5>
+
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    {% if result %}
+                        {% if result.error %}
+                            <p class="text-danger">{{ result.error }}</p>
+                        {% else %}
+                            <p style="color: #000;"><strong>Tax to Pay:</strong> ₹{{ result.tax }}</p>
+                            <p style="color: #000;"><strong>Net Income After Tax:</strong> ₹{{ result.net_income }}</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- JS CDN -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Modal trigger -->
+    <script>
+        $(document).ready(function () {
+            {% if result %}
+            $('#resultModal').modal('show');
+            {% endif %}
+        });
+
+        function toggleTheme() {
+    const style = document.getElementById('theme-style');
+    const isDark = style.innerHTML.includes('background-color: #141212');
+    style.innerHTML = isDark ? `
+        body {
+            background-color: #ffffff;
+            background-image: none;
+            padding: 20px;
+            color: #000;
+        }
+        h1 {
+            color: #007bff;
+        }
+        .content-box {
+            padding: 40px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            color: #000;
+        }
+        .btn-theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .modal-content {
+            margin-top: 20%;
+            background-color: #ffffff;
+            color: #000; /* Light theme modal text */
+        }
+        .modal-body {
+            color: #000;
+        }
+        .export-buttons {
+            margin-top: 15px;
+            text-align: center;
+        }
+        #tax-chart {
+            margin-top: 30px;
+        }
+    ` : `
+        body {
+            background-color: #141212;
+            background-image: url('/static/tax.png');
+            padding: 20px;
+            color: #fff;
+        }
+        h1 {
+            color: rgb(0, 217, 255);
+        }
+        .content-box {
+            padding: 40px;
+            border: 2px solid #ff0000cc;
+            border-radius: 5px;
+            background-color: #e3d2d2;
+            color: #000;
+        }
+        .btn-theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .modal-content {
+            margin-top: 20%;
+            background-color: #1f1f1f;
+            color: #fff; /* Dark theme modal text */
+        }
+        .modal-body {
+            color: #fff;
+        }
+        .export-buttons {
+            margin-top: 15px;
+            text-align: center;
+        }
+        #tax-chart {
+            margin-top: 30px;
+        }
+    `;
+}
+
+    </script>
+</body>
+</html>

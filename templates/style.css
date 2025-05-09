@@ -1,0 +1,38 @@
+body {
+    background-color: #141212;
+    padding: 20px;
+    background-image: url('/static/static/tax.png');
+    
+
+}
+h1 { color: rgb(0, 217, 255); }
+h3 {color:rgb(255, 255, 255)}
+
+.content-box {
+    padding: 40px;
+    border: 2px solid #ff0000cc;
+    border-radius: 5px;
+    background-color: #e3d2d2;
+}
+
+.error-text {
+    color: red;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.modal-content {
+    margin-top: 20%;
+}
+
+#Submit {
+    margin-top: 60px;
+}
+
+
+
+modal-footer {
+    display:flex;
+    justify-content: center;
+    align-items: center;
+}
