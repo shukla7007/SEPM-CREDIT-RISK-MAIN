@@ -460,5 +460,5 @@ def generate_tax_chart(df):
         print("Tax Chart Error:", e)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5001))
+    port = int(os.environ.get("PORT", 10000))
     app.run(debug=False, host="0.0.0.0", port=port)
