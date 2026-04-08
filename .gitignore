@@ -1,0 +1,4 @@
+static/uploads/
+PYTHON/
+__pycache__/
+*.pdf

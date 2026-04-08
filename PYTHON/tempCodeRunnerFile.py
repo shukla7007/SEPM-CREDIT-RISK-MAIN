@@ -1,1 +1,0 @@
-rint(item2.calculate_total_price(item2.price , item2.quantity))
