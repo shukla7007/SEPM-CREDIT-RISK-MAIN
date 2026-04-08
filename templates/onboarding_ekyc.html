@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Banking App Onboarding & eKYC</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --bg: #f4f6f9;
+        --surface: #ffffff;
+        --surface2: #f8f9fb;
+        --border: #e2e6ed;
+        --accent: #2563eb;
+        --accent-hover: #1d4ed8;
+        --text: #1a202c;
+        --muted: #6b7280;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --warning-bg: #fffbeb;
+        --warning-border: #fcd34d;
+        --warning-text: #92400e;
+    }
+
+    body {
+        font-family: 'DM Sans', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background:
+            radial-gradient(ellipse 70% 50% at 80% -5%, rgba(37,99,235,0.07) 0%, transparent 60%),
+            radial-gradient(ellipse 50% 40% at 5% 100%, rgba(37,99,235,0.05) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .page {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 60px 20px 60px;
+    }
+
+    /* Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+        animation: fadeUp 0.6s ease both;
+    }
+
+    h1 {
+        font-family: 'DM Serif Display', serif;
+        font-size: clamp(28px, 4vw, 44px);
+        line-height: 1.15;
+        color: var(--text);
+        letter-spacing: -0.5px;
+        margin-bottom: 10px;
+    }
+
+    h1 em { font-style: italic; color: var(--accent); }
+
+    .subtitle {
+        font-size: 15px;
+        color: var(--muted);
+        max-width: 420px;
+        line-height: 1.6;
+        margin: 0 auto;
+    }
+
+    /* Progress stepper */
+    .stepper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        margin-bottom: 36px;
+        animation: fadeUp 0.65s 0.05s ease both;
+    }
+
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        position: relative;
+    }
+
+    .step-circle {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+        transition: all 0.3s;
+        z-index: 1;
+    }
+
+    .step-circle.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+    }
+
+    .step-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .step-line {
+        width: 60px;
+        height: 2px;
+        background: var(--border);
+        margin-bottom: 20px;
+        flex-shrink: 0;
+    }
+
+    /* Card */
+    .card {
+        width: 100%;
+        max-width: 620px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+        animation: fadeUp 0.7s 0.1s ease both;
+    }
+
+    /* Flash messages */
+    .flash-msg {
+        margin: 20px 32px 0;
+        padding: 12px 16px;
+        background: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        border-radius: 10px;
+        color: var(--warning-text);
+        font-size: 13px;
+        font-weight: 500;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    /* Step sections */
+    .form-section {
+        padding: 28px 32px 0;
+    }
+
+    .form-section:last-of-type { padding-bottom: 0; }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .section-num {
+        width: 28px; height: 28px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .section-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 18px;
+        color: var(--text);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 14px;
+        pointer-events: none;
+        opacity: 0.5;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    select {
+        width: 100%;
+        padding: 10px 12px 10px 34px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: rgba(37,99,235,0.45);
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+    }
+
+    input::placeholder { color: #b0b8c4; }
+
+    .select-wrap::after {
+        content: '▾';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        pointer-events: none;
+        font-size: 12px;
+    }
+
+    .select-wrap select { padding-right: 28px; }
+
+    /* Divider between sections */
+    .section-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 28px 0 0;
+    }
+
+    /* File upload */
+    .file-upload-wrap {
+        position: relative;
+        border: 1.5px dashed var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        background: var(--surface2);
+    }
+
+    .file-upload-wrap:hover {
+        border-color: rgba(37,99,235,0.4);
+        background: rgba(37,99,235,0.03);
+    }
+
+    .file-upload-wrap input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+    }
+
+    .file-upload-icon { font-size: 28px; margin-bottom: 8px; }
+
+    .file-upload-text {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    .file-upload-text strong {
+        color: var(--accent);
+        font-weight: 600;
+    }
+
+    .file-name {
+        font-size: 12px;
+        color: var(--success);
+        margin-top: 8px;
+        font-weight: 500;
+        display: none;
+    }
+
+    /* Submit area */
+    .submit-area {
+        padding: 28px 32px 32px;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: var(--accent);
+        border: none;
+        border-radius: 12px;
+        color: #fff;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+        box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+    }
+
+    .submit-btn:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(37,99,235,0.3);
+    }
+
+    .submit-btn:active { transform: translateY(0); }
+
+    .footer-note {
+        margin-top: 20px;
+        font-size: 12px;
+        color: #b0b8c4;
+        text-align: center;
+        animation: fadeUp 0.8s 0.2s ease both;
+    }
+
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 540px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .form-section { padding: 24px 20px 0; }
+        .submit-area { padding: 24px 20px 28px; }
+        .stepper { gap: 0; }
+        .step-line { width: 30px; }
+        .step-label { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+    <div class="page-header">
+        <h1>Customer <em>Onboarding</em></h1>
+        <p class="subtitle">Complete your eKYC verification in a few simple steps to activate your account.</p>
+    </div>
+
+    <!-- Stepper -->
+    <div class="stepper">
+        <div class="step-item">
+            <div class="step-circle active">1</div>
+            <span class="step-label">Basic Info</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+            <div class="step-circle active">2</div>
+            <span class="step-label">Address</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+            <div class="step-circle active">3</div>
+            <span class="step-label">ID Upload</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step-item">
+            <div class="step-circle active">4</div>
+            <span class="step-label">Selfie</span>
+        </div>
+    </div>
+
+    <div class="card">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+          <div class="flash-msg">
+              <span>⚠</span>
+              <span>{% for message in messages %}{{ message }}{% endfor %}</span>
+          </div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="/onboarding-ekyc" method="POST" enctype="multipart/form-data">
+
+            <!-- Step 1: Basic Info -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-num">1</div>
+                    <span class="section-title">Basic Information</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>Full Name</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">👤</span>
+                            <input type="text" name="full_name" value="{{ full_name or '' }}" placeholder="e.g. Priya Sharma" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">✉</span>
+                            <input type="email" name="email" value="{{ email or '' }}" placeholder="you@example.com" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">📞</span>
+                            <input type="tel" name="phone" value="{{ phone or '' }}" placeholder="+91 98765 43210" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Step 2: Address -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-num">2</div>
+                    <span class="section-title">Address Details</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>Street Address</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">🏠</span>
+                            <input type="text" name="address" value="{{ address or '' }}" placeholder="123, MG Road" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>City</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">🏙</span>
+                            <input type="text" name="city" value="{{ city or '' }}" placeholder="Mumbai" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ZIP / PIN Code</label>
+                        <div class="input-wrap">
+                            <span class="input-icon">📮</span>
+                            <input type="text" name="zip" value="{{ zip or '' }}" placeholder="400001" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Step 3: Upload ID -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-num">3</div>
+                    <span class="section-title">Upload ID Document</span>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>ID Type</label>
+                        <div class="input-wrap select-wrap">
+                            <span class="input-icon">🪪</span>
+                            <select name="id_type" required style="padding-left: 34px;">
+                                <option value="">Select ID type</option>
+                                <option value="passport">Passport</option>
+                                <option value="aadhaar">Aadhaar Card</option>
+                                <option value="license">Driver's License</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group full">
+                        <label>Upload Document (PDF / JPG / PNG)</label>
+                        <div class="file-upload-wrap" id="id-upload-wrap">
+                            <input type="file" name="id_upload" accept=".jpg,.jpeg,.png,.pdf" required
+                                onchange="showFileName(this, 'id-file-name')">
+                            <div class="file-upload-icon">📄</div>
+                            <div class="file-upload-text">
+                                <strong>Click to upload</strong> or drag and drop<br>
+                                Supported: PDF, JPG, PNG
+                            </div>
+                            <div class="file-name" id="id-file-name"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Step 4: Selfie -->
+            <div class="form-section">
+                <div class="section-header">
+                    <div class="section-num">4</div>
+                    <span class="section-title">Selfie for eKYC</span>
+                </div>
+                <div class="form-group">
+                    <label>Upload Selfie</label>
+                    <div class="file-upload-wrap" id="selfie-upload-wrap">
+                        <input type="file" name="selfie_upload" accept="image/*" capture="user" required
+                            onchange="showFileName(this, 'selfie-file-name')">
+                        <div class="file-upload-icon">🤳</div>
+                        <div class="file-upload-text">
+                            <strong>Click to take or upload</strong> a selfie<br>
+                            Ensure your face is clearly visible
+                        </div>
+                        <div class="file-name" id="selfie-file-name"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="submit-area">
+                <button type="submit" class="submit-btn">Submit & Verify →</button>
+            </div>
+
+        </form>
+    </div>
+
+    <p class="footer-note">Your data is encrypted and processed securely in compliance with KYC regulations.</p>
+</div>
+
+<script>
+    function showFileName(input, labelId) {
+        const label = document.getElementById(labelId);
+        if (input.files && input.files[0]) {
+            label.textContent = '✓ ' + input.files[0].name;
+            label.style.display = 'block';
+        }
+    }
+</script>
+
+</body>
+</html>

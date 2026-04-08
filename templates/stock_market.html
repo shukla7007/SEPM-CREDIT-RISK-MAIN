@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Stock Market Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<!-- Plotly for candlestick -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+:root {
+  --bg: #080c14;
+  --surface: #0d1526;
+  --surface2: #111d35;
+  --border: #1e2d50;
+  --accent: #00d4ff;
+  --accent2: #00ff88;
+  --danger: #ff4d6a;
+  --muted: #4a6080;
+  --text: #c8d8f0;
+  --text-bright: #e8f0ff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.6rem;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+}
+.logo span { color: var(--accent); }
+.live-dot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.live-dot::before {
+  content: '';
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent2);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
+}
+.search-section {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.search-wrapper {
+  flex: 1;
+  position: relative;
+}
+.search-wrapper input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-bright);
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  padding: 0.85rem 1rem 0.85rem 3rem;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.search-wrapper input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.1), 0 0 20px rgba(0,212,255,0.05);
+}
+.search-wrapper input::placeholder { color: var(--muted); text-transform: none; letter-spacing: 0; }
+.search-icon {
+  position: absolute;
+  left: 1rem; top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+.btn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.85rem 1.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+.btn:hover { background: #33ddff; box-shadow: 0 0 20px rgba(0,212,255,0.4); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.quick-picks {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  margin-bottom: 2rem; align-items: center;
+}
+.chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.08em;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.06); }
+.error-box {
+  background: rgba(255,77,106,0.1);
+  border: 1px solid rgba(255,77,106,0.3);
+  color: var(--danger);
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  display: none;
+}
+.loader {
+  display: none;
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted);
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Stock summary card ── */
+.stock-card {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  animation: slideUp 0.4s ease;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.stock-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.75rem; font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.3rem;
+}
+.stock-symbol {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 2rem;
+  color: var(--text-bright);
+  letter-spacing: -0.02em;
+}
+.price-block { text-align: right; }
+.current-price {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 2.2rem;
+  color: var(--text-bright);
+  letter-spacing: -0.03em;
+}
+.price-change { font-size: 0.9rem; font-weight: 700; margin-top: 0.2rem; }
+.up   { color: var(--accent2); }
+.down { color: var(--danger); }
+.currency-badge {
+  display: inline-block;
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.25);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.1em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 3px;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.stat-item {
+  padding: 1.2rem 1.5rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+.stat-label {
+  font-size: 0.65rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 0.4rem;
+}
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 1rem;
+  color: var(--text-bright);
+}
+
+/* ── Candlestick chart section ── */
+.chart-section {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  animation: slideUp 0.4s ease 0.1s both;
+}
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.chart-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 0.85rem;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+/* Range buttons */
+.range-btns {
+  display: flex;
+  gap: 0.4rem;
+}
+.range-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.06em;
+}
+.range-btn:hover, .range-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(0,212,255,0.08);
+}
+#candlestickChart {
+  width: 100%;
+  height: 420px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+/* Legend row */
+.candle-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+.legend-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+/* API notice */
+.api-notice {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 0.75rem;
+}
+.api-notice a { color: var(--accent); text-decoration: none; }
+.api-notice strong { color: var(--text); }
+
+@media (max-width: 600px) {
+  .card-header { flex-direction: column; }
+  .price-block { text-align: left; }
+  .current-price { font-size: 1.8rem; }
+  .stock-symbol { font-size: 1.5rem; }
+  .search-section { flex-direction: column; }
+  .btn { width: 100%; }
+  #candlestickChart { height: 300px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">FINOVIA STOCK <span>DASHBOARD</span></div>
+    <div class="live-dot">Live Data</div>
+  </header>
+
+  <!-- API Key -->
+  <div style="margin-bottom:1.5rem;">
+    
+    <input type="text" id="apiKey" placeholder="Paste your free API key here..."
+      style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text-bright);
+             font-family:'Space Mono',monospace;font-size:0.85rem;padding:0.7rem 1rem;border-radius:6px;
+             outline:none;transition:border-color 0.2s;"
+      onfocus="this.style.borderColor='var(--accent)'"
+      onblur="this.style.borderColor='var(--border)'"/>
+    
+  </div>
+
+  <!-- Search -->
+  <div class="search-section">
+    <div class="search-wrapper">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="stockInput"
+        placeholder="Enter stock symbol (e.g. AAPL, TSLA, RELIANCE.BSE)" />
+    </div>
+    <button class="btn" onclick="fetchStock()">Search</button>
+  </div>
+
+  <!-- Quick picks -->
+  <div class="quick-picks">
+    <span style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Quick:</span>
+    <div class="chip" onclick="quickSearch('AAPL')">AAPL</div>
+    <div class="chip" onclick="quickSearch('MSFT')">MSFT</div>
+    <div class="chip" onclick="quickSearch('GOOGL')">GOOGL</div>
+    <div class="chip" onclick="quickSearch('TSLA')">TSLA</div>
+    <div class="chip" onclick="quickSearch('AMZN')">AMZN</div>
+    <div class="chip" onclick="quickSearch('NVDA')">NVDA</div>
+    <div class="chip" onclick="quickSearch('META')">META</div>
+    <div class="chip" onclick="quickSearch('RELIANCE.BSE')">RELIANCE</div>
+    <div class="chip" onclick="quickSearch('TCS.BSE')">TCS</div>
+    <div class="chip" onclick="quickSearch('INFY.BSE')">INFY</div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Loader -->
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <div>Fetching market data...</div>
+  </div>
+
+  <!-- Stock Summary Card -->
+  <div class="stock-card" id="stockCard">
+    <div class="card-header">
+      <div>
+        <div class="stock-name" id="companyName">Stock Symbol</div>
+        <div class="stock-symbol" id="stockSymbol">—</div>
+      </div>
+      <div class="price-block">
+        <div class="current-price" id="currentPrice">—</div>
+        <div class="price-change" id="priceChange">—</div>
+      </div>
+    </div>
+    <div class="stats-grid" id="statsGrid"></div>
+  </div>
+
+  <!-- Candlestick Chart -->
+  <div class="chart-section" id="chartSection">
+    <div class="chart-header">
+      <div class="chart-title" id="chartTitle">Candlestick Chart</div>
+      <div class="range-btns">
+        <button class="range-btn active" onclick="changeRange('1D', this)">1D</button>
+        <button class="range-btn" onclick="changeRange('1W', this)">1W</button>
+        <button class="range-btn" onclick="changeRange('1M', this)">1M</button>
+        <button class="range-btn" onclick="changeRange('3M', this)">3M</button>
+      </div>
+    </div>
+    <div id="candlestickChart"></div>
+    <div class="candle-legend">
+      <span><span class="legend-dot" style="background:#00ff88;"></span>Bullish (Close &gt; Open)</span>
+      <span><span class="legend-dot" style="background:#ff4d6a;"></span>Bearish (Close &lt; Open)</span>
+      <span style="color:var(--accent);">📊 OHLC: Open · High · Low · Close</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────
+  let currentSymbol  = '';
+  let currentCurrency = { symbol: '$', code: 'USD', name: 'US Dollar' };
+  let currentRange   = '1D';
+  let cachedOHLC     = {};   // { '1D': [...], '1W': [...], '1M': [...], '3M': [...] }
+
+  document.getElementById('stockInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') fetchStock();
+  });
+
+  function quickSearch(s) {
+    document.getElementById('stockInput').value = s;
+    fetchStock();
+  }
+
+  function showError(msg) {
+    const b = document.getElementById('errorBox');
+    b.textContent = '⚠ ' + msg;
+    b.style.display = 'block';
+  }
+  function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+
+  // ── Currency detection ──────────────────────────────────
+  function getCurrency(ticker) {
+    const t = ticker.toUpperCase();
+    if (t.endsWith('.BSE') || t.endsWith('.NS') || t.endsWith('.BO'))
+      return { symbol: '₹', code: 'INR', name: 'Indian Rupee' };
+    if (t.endsWith('.LON') || t.endsWith('.L'))
+      return { symbol: '£', code: 'GBP', name: 'British Pound' };
+    if (t.endsWith('.EPA') || t.endsWith('.ETR') || t.endsWith('.EBR') || t.endsWith('.BIT'))
+      return { symbol: '€', code: 'EUR', name: 'Euro' };
+    if (t.endsWith('.TYO') || t.endsWith('.T'))
+      return { symbol: '¥', code: 'JPY', name: 'Japanese Yen' };
+    if (t.endsWith('.HKG') || t.endsWith('.HK'))
+      return { symbol: 'HK$', code: 'HKD', name: 'Hong Kong Dollar' };
+    if (t.endsWith('.TSX') || t.endsWith('.TO') || t.endsWith('.CVE'))
+      return { symbol: 'CA$', code: 'CAD', name: 'Canadian Dollar' };
+    if (t.endsWith('.ASX') || t.endsWith('.AX'))
+      return { symbol: 'A$', code: 'AUD', name: 'Australian Dollar' };
+    if (t.endsWith('.SWX') || t.endsWith('.SW'))
+      return { symbol: 'CHF ', code: 'CHF', name: 'Swiss Franc' };
+    return { symbol: '$', code: 'USD', name: 'US Dollar' };
+  }
+
+  // ── Range button handler ────────────────────────────────
+  function changeRange(range, btn) {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentRange = range;
+
+    if (cachedOHLC[range]) {
+      renderCandlestick(cachedOHLC[range], currentSymbol, currentCurrency.symbol);
+    } else {
+      fetchOHLC(currentSymbol, document.getElementById('apiKey').value.trim(), range);
+    }
+  }
+
+  // ── Main fetch ──────────────────────────────────────────
+  async function fetchStock() {
+    const symbol = document.getElementById('stockInput').value.trim().toUpperCase();
+    const apiKey = document.getElementById('apiKey').value.trim();
+
+    if (!symbol) { showError('Please enter a stock symbol.'); return; }
+    if (!apiKey)  { showError('Please enter your Alpha Vantage API key first.'); return; }
+
+    hideError();
+    cachedOHLC = {};
+    currentSymbol   = symbol;
+    currentCurrency = getCurrency(symbol);
+    currentRange    = '1D';
+
+    // Reset range btns
+    document.querySelectorAll('.range-btn').forEach((b,i) => {
+      b.classList.toggle('active', i === 0);
+    });
+
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('stockCard').style.display = 'none';
+    document.getElementById('chartSection').style.display = 'none';
+
+    const sym = currentCurrency.symbol;
+
+    try {
+      // ── Quote ──
+      const quoteRes  = await fetch(
+        `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${apiKey}`
+      );
+      const quoteData = await quoteRes.json();
+
+      if (quoteData['Note'] || quoteData['Information'])
+        throw new Error('API rate limit reached. Free tier: 25 requests/day. Try again later.');
+
+      const quote = quoteData['Global Quote'];
+      if (!quote || !quote['05. price'])
+        throw new Error(`Symbol "${symbol}" not found. Check your ticker and try again.`);
+
+      const price     = parseFloat(quote['05. price']).toFixed(2);
+      const change    = parseFloat(quote['09. change']).toFixed(2);
+      const rawPct    = quote['10. change percent'].replace('%','').trim();
+      const changePct = parseFloat(rawPct).toFixed(2);
+      const isUp      = parseFloat(change) >= 0;
+
+      document.getElementById('companyName').innerHTML =
+        `Stock Symbol <span class="currency-badge">${currentCurrency.code}</span>`;
+      document.getElementById('stockSymbol').textContent = symbol;
+      document.getElementById('currentPrice').textContent = `${sym}${price}`;
+      document.getElementById('priceChange').textContent =
+        `${isUp ? '▲' : '▼'} ${sym}${Math.abs(change)} (${Math.abs(changePct)}%)`;
+      document.getElementById('priceChange').className = 'price-change ' + (isUp ? 'up' : 'down');
+
+      document.getElementById('statsGrid').innerHTML = [
+        { label: 'Open',        value: `${sym}${parseFloat(quote['02. open']).toFixed(2)}` },
+        { label: 'Day High',    value: `${sym}${parseFloat(quote['03. high']).toFixed(2)}` },
+        { label: 'Day Low',     value: `${sym}${parseFloat(quote['04. low']).toFixed(2)}` },
+        { label: 'Prev Close',  value: `${sym}${parseFloat(quote['08. previous close']).toFixed(2)}` },
+        { label: 'Volume',      value: Number(quote['06. volume']).toLocaleString() },
+        { label: 'Trading Day', value: quote['07. latest trading day'] },
+      ].map(s => `<div class="stat-item">
+        <div class="stat-label">${s.label}</div>
+        <div class="stat-value">${s.value}</div>
+      </div>`).join('');
+
+      document.getElementById('stockCard').style.display = 'block';
+
+      // ── Fetch OHLC for candlestick (1D intraday) ──
+      await fetchOHLC(symbol, apiKey, '1D');
+      document.getElementById('chartSection').style.display = 'block';
+
+    } catch (err) {
+      showError(err.message || 'Failed to fetch data. Check API key and symbol.');
+    } finally {
+      document.getElementById('loader').style.display = 'none';
+    }
+  }
+
+  // ── Fetch OHLC data for a range ─────────────────────────
+  async function fetchOHLC(symbol, apiKey, range) {
+    // Determine AV function + interval
+    let avFunction, interval, seriesKey;
+
+    if (range === '1D') {
+      avFunction = 'TIME_SERIES_INTRADAY';
+      interval   = '5min';
+      seriesKey  = 'Time Series (5min)';
+    } else if (range === '1W') {
+      avFunction = 'TIME_SERIES_INTRADAY';
+      interval   = '60min';
+      seriesKey  = 'Time Series (60min)';
+    } else {
+      avFunction = 'TIME_SERIES_DAILY';
+      interval   = null;
+      seriesKey  = 'Time Series (Daily)';
+    }
+
+    let url = `https://www.alphavantage.co/query?function=${avFunction}&symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}&outputsize=compact`;
+    if (interval) url += `&interval=${interval}`;
+
+    try {
+      const res  = await fetch(url);
+      const data = await res.json();
+
+      if (data['Note'] || data['Information']) {
+        showError('Rate limit hit while loading chart. Quota: 25 req/day.');
+        return;
+      }
+
+      const series = data[seriesKey];
+      if (!series) { showError('Chart data unavailable for this symbol/range.'); return; }
+
+      let entries = Object.entries(series).reverse(); // oldest → newest
+
+      // Slice by range
+      if (range === '1D')  entries = entries.slice(-78);   // ~6.5h × 12 per h
+      if (range === '1W')  entries = entries.slice(-40);   // ~5 days × 8 candles
+      if (range === '1M')  entries = entries.slice(-22);
+      if (range === '3M')  entries = entries.slice(-66);
+
+      const candles = entries.map(([time, v]) => ({
+        time:  time,
+        open:  parseFloat(v['1. open']),
+        high:  parseFloat(v['2. high']),
+        low:   parseFloat(v['3. low']),
+        close: parseFloat(v['4. close']),
+      }));
+
+      cachedOHLC[range] = candles;
+      renderCandlestick(candles, symbol, currentCurrency.symbol);
+
+    } catch (e) {
+      showError('Failed to load chart data. ' + e.message);
+    }
+  }
+
+  // ── Render Plotly candlestick ───────────────────────────
+  function renderCandlestick(candles, symbol, currSym) {
+    const times  = candles.map(c => c.time);
+    const opens  = candles.map(c => c.open);
+    const highs  = candles.map(c => c.high);
+    const lows   = candles.map(c => c.low);
+    const closes = candles.map(c => c.close);
+
+    const trace = {
+      type: 'candlestick',
+      x: times,
+      open:  opens,
+      high:  highs,
+      low:   lows,
+      close: closes,
+      name:  symbol,
+      increasing: {
+        line:      { color: '#00ff88', width: 1 },
+        fillcolor: '#00ff88',
+      },
+      decreasing: {
+        line:      { color: '#ff4d6a', width: 1 },
+        fillcolor: '#ff4d6a',
+      },
+      hoverlabel: {
+        bgcolor:    '#0d1526',
+        bordercolor:'#00d4ff',
+        font: { family: 'Space Mono', size: 12, color: '#e8f0ff' },
+      },
+    };
+
+    const layout = {
+      paper_bgcolor: '#0d1526',
+      plot_bgcolor:  '#0d1526',
+      margin: { t: 10, r: 20, b: 50, l: 70 },
+      xaxis: {
+        type: 'category',
+        rangeslider: { visible: false },
+        tickfont:  { family: 'Space Mono', size: 10, color: '#4a6080' },
+        linecolor: '#1e2d50',
+        gridcolor: 'rgba(30,45,80,0.5)',
+        tickangle: -35,
+        automargin: true,
+        nticks: 10,
+      },
+      yaxis: {
+        tickfont:  { family: 'Space Mono', size: 10, color: '#4a6080' },
+        linecolor: '#1e2d50',
+        gridcolor: 'rgba(30,45,80,0.4)',
+        tickprefix: currSym,
+        side: 'left',
+        automargin: true,
+      },
+      showlegend: false,
+      hovermode:  'x unified',
+    };
+
+    const config = {
+      displayModeBar: true,
+      displaylogo: false,
+      modeBarButtonsToRemove: ['toImage','sendDataToCloud','editInChartStudio','toggleHover'],
+      responsive: true,
+    };
+
+    Plotly.react('candlestickChart', [trace], layout, config);
+
+    document.getElementById('chartTitle').textContent =
+      `${symbol} · Candlestick (${currentRange}) · ${currentCurrency.name}`;
+  }
+</script>
+</body>
+</html>
